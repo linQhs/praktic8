@@ -97,6 +97,7 @@ namespace DungeonGame
         static string[] GenerateDungeonMap()
         {
             string[] map = new string[10];
+
             string[] events = { "Монстр", "Ловушка", "Сундук", "Торговец", "Пустая комната" };
 
             for (int i = 0; i < map.Length - 1; i++)
