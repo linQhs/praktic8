@@ -1,259 +1,536 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-
-namespace DungeonGame
+﻿namespace Pratica_8_RPG
 {
-    class Program
+    internal class Program
     {
-        static Random random = new Random();
+        public static int playerHealth;
+        public static int playerGold;
+        public static int swordDamageAmount = 10;
+        public static int bowDamageAmount = 8;
+        public static bool gameRunning;
+        public static int potionCount;
+        public static int arrowCount;
 
-        // структура для представления предмета инвентаря
-        struct Item
-        {
-            public string Name;
-            public string Description;
-        }
-
+        public static int[] roomTypes = new int[15];
         static void Main(string[] args)
         {
-            // параметры игрока
-            int playerHealth = 100;
-            int potions = 3;
-            int gold = 0;
-            int arrows = 5;
-            bool hasSword = true;
-            bool hasBow = true;
-            Item[] inventory = new Item[5];
-            int inventorySize = 0;
+            StartGame();
 
-            // карта подземелья
-            string[] dungeonMap = GenerateDungeonMap();
-
-            // игровой цикл
-            for (int roomNumber = 0; roomNumber < dungeonMap.Length; roomNumber++)
+            InitializeGame();
+            if (gameRunning == true)
             {
-                Console.WriteLine($"\n--- Комната {roomNumber + 1} ---");
-                Console.WriteLine($"Вы вошли в комнату: {dungeonMap[roomNumber]}");
-                Console.WriteLine($"Здоровье: {playerHealth}, Зелья: {potions}, Золото: {gold}, Стрелы: {arrows}");
-
-                switch (dungeonMap[roomNumber])
-                {
-                    case "Монстр":
-                        if (!FightMonster(ref playerHealth, ref arrows, ref gold, hasSword, hasBow))
-                        {
-                            Console.WriteLine("Игра окончена!");
-                            return;
-                        }
-                        break;
-                    case "Ловушка":
-                        HandleTrap(ref playerHealth);
-                        if (playerHealth <= 0)
-                        {
-                            Console.WriteLine("Игра окончена!");
-                            return;
-                        }
-                        break;
-                    case "Сундук":
-                        HandleChest(inventory, ref inventorySize, ref arrows, ref gold, ref potions);
-                        break;
-                    case "Торговец":
-                        HandleTrader(ref playerHealth, ref gold, inventory, ref inventorySize, ref potions);
-                        break;
-                    case "Пустая комната":
-                        Console.WriteLine("В комнате ничего не произошло.");
-                        break;
-                    case "Босс":
-                        if (!FightMonster(ref playerHealth, ref arrows, ref gold, hasSword, hasBow))
-                        {
-                            Console.WriteLine("Игра окончена!");
-                            return;
-                        }
-                        else
-                        {
-                            Console.WriteLine("\n!!! Вы победили босса и выиграли игру! !!!");
-                            return;
-                        }
-                }
-
-                // Действия после комнаты
-                Console.WriteLine("\nЧто вы хотите сделать?");
-                Console.WriteLine("1. Продолжить");
-                Console.WriteLine("2. Использовать зелье (Зелий: " + potions + ")");
-                Console.Write("Выберите действие: ");
-
-                string actionChoice = Console.ReadLine();
-
-                if (actionChoice == "2" && potions > 0)
-                {
-                    playerHealth += 20;
-                    potions--;
-                    Console.WriteLine("Вы использовали зелье и восстановили 20 HP. Ваше здоровье: " + playerHealth);
-                }
-
-                Console.WriteLine("Нажмите Enter, чтобы продолжить...");
-                Console.ReadLine();
+                ProcessRoom();
+            }
+            if (gameRunning == true)
+            {
+                FightBoss();
             }
         }
-        static string[] GenerateDungeonMap()
+        public static void InitializeGame()
         {
-            string[] map = new string[10];
+            playerHealth = 100;
+            playerGold = 10;
+            arrowCount = 5;
+            potionCount = 5;
 
-            string[] events = { "Монстр", "Ловушка", "Сундук", "Торговец", "Пустая комната" };
-
-            for (int i = 0; i < map.Length - 1; i++)
+        }
+        public static void StartGame()
+        {
+            gameRunning = true;
+            Random random = new Random();
+            for (int i = 0; i < roomTypes.Length; i++)
             {
-                map[i] = events[random.Next(events.Length)];
+                roomTypes[i] = random.Next(1, 6);
             }
 
-            map[9] = "Босс"; // босс всегда в последней комнате
-            return map;
         }
-
-        // бой с монстром
-        static bool FightMonster(ref int playerHealth, ref int arrows, ref int gold, bool hasSword, bool hasBow)
+        public static void ProcessRoom()
         {
-            int monsterHealth = random.Next(20, 51);
-            Console.WriteLine($"\nВы столкнулись с монстром! У него {monsterHealth} HP.");
 
-            while (playerHealth > 0 && monsterHealth > 0)
+            for (int i = 0; i < roomTypes.Length; i++)
             {
-                Console.WriteLine("\nВаши действия:");
-                Console.WriteLine("1. Атаковать мечом (10-20 урона)");
-                if (hasBow)
-                    Console.WriteLine("2. Атаковать луком (5-15 урона, требуется стрела, у вас: " + arrows + ")");
-                Console.Write("Выберите действие: ");
-
-                string choice = Console.ReadLine();
-
-                switch (choice)
+                switch (roomTypes[i])
                 {
-                    case "1":
-                        int damage = random.Next(10, 21);
-                        monsterHealth -= damage;
-                        Console.WriteLine($"Вы нанесли {damage} урона мечом.");
+                    case 1:
+                        ShowStats();
+                        FightMonster();
                         break;
-                    case "2":
-                        if (hasBow && arrows > 0)
-                        {
-                            damage = random.Next(5, 16);
-                            monsterHealth -= damage;
-                            arrows--;
-                            Console.WriteLine($"Вы нанесли {damage} урона из лука.");
-                        }
-                        else
-                        {
-                            Console.WriteLine("У вас нет стрел или лука!");
-                            continue;
-                        }
+                    case 2:
+                        ShowStats();
+                        OpenChest();
                         break;
-                    default:
-                        Console.WriteLine("Некорректный выбор.");
-                        continue;
+                    case 3:
+                        ShowStats();
+                        VisitAltar();
+                        break;
+                    case 4:
+                        ShowStats();
+                        MeetDarkMage();
+                        break;
+                    case 5:
+                        ShowStats();
+                        VisitMerchant();
+                        break;
+                    case 6:
+                        {
+                            ShowStats();
+                            riddle();
+                            break;
+                        }
                 }
-
-                if (monsterHealth <= 0)
-                {
-                    Console.WriteLine("Вы победили монстра!");
-                    gold += random.Next(5, 16);
-                    Console.WriteLine($"Вы нашли {gold} золота.");
-                    return true;
-                }
-
-                // атака монстра
-                int monsterDamage = random.Next(5, 16);
-                playerHealth -= monsterDamage;
-                Console.WriteLine($"Монстр нанес вам {monsterDamage} урона.");
-                Console.WriteLine($"Ваше здоровье: {playerHealth} HP.");
-
                 if (playerHealth <= 0)
                 {
-                    Console.WriteLine("Вы погибли в бою!");
-                    return false;
+                    Console.WriteLine("Вы проиграли");
+                    EndGame();
+                    return;
                 }
             }
-            return false;
         }
 
-        // ловушка
-        static void HandleTrap(ref int playerHealth)
+        public static void FightMonster()
         {
-            int damage = random.Next(10, 21);
-            playerHealth -= damage;
-            Console.WriteLine($"\nВы попали в ловушку и потеряли {damage} HP.");
-            Console.WriteLine($"Ваше здоровье: {playerHealth} HP.");
+            Random random = new Random();
+            int monsterHP = random.Next(30, 100);
 
-            if (playerHealth <= 0)
+            Console.WriteLine("Монстр!");
+            Console.WriteLine("У монстра " + monsterHP + " здоровья");
+            while (monsterHP > 0)
             {
-                Console.WriteLine("Вы погибли!");
-            }
-        }
-        static void HandleChest(Item[] inventory, ref int inventorySize, ref int arrows, ref int gold, ref int potions)
-        {
-            Console.WriteLine("\nВы нашли сундук! Чтобы его открыть, решите загадку.");
+                int monsterAttack = random.Next(10, 20);
 
-            Console.WriteLine("Сколько будет 1 + 1?");
-            Console.Write("Ваш ответ: ");
-            string answer = Console.ReadLine();
 
-            if (answer == "2")
-            {
-                Console.WriteLine("Правильно! Вы открыли сундук.");
-
-                int rewardType = random.Next(1, 4);
-
-                switch (rewardType)
+                bool b = true;
+                while (b == true)
                 {
-                    case 1: // Зелье
-                        potions++;
-                        Console.WriteLine("Вы нашли зелье здоровья!");
-                        break;
-                    case 2: // Золото
-                        int goldAmount = random.Next(20, 41);
-                        gold += goldAmount;
-                        Console.WriteLine($"Вы нашли {goldAmount} золота!");
-                        break;
-                    case 3: // Стрелы
-                        int arrowAmount = random.Next(5, 11);
-                        arrows += arrowAmount;
-                        Console.WriteLine($"Вы нашли {arrowAmount} стрел!");
-                        break;
+                    Console.WriteLine("(1) Атака  мечем, (2) Атака луком");
+                    string a = Console.ReadLine();
+
+                    {
+                        switch (a)
+                        {
+                            case "1":
+                                monsterHP -= swordDamageAmount;
+                                b = false;
+                                break;
+                            case "2":
+                                if (arrowCount > 0)
+                                {
+                                    monsterHP -= bowDamageAmount;
+                                    arrowCount -= 1;
+                                    b = false;
+                                }
+                                else
+                                {
+                                    Console.WriteLine("Недостаточно стрел");
+                                }
+                                break;
+
+                            default:
+
+                                Console.WriteLine("Выбор не коректен");
+                                break;
+                        }
+
+                    }
+
                 }
+                if (monsterHP > 0)
+                {
+                    Console.WriteLine("У монстра осталось " + monsterHP + " здоровья");
+                    playerHealth -= monsterAttack;
+                    // ограничение
+                    if (playerHealth < 0)
+                    {
+                        playerHealth = 0;
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("Вы победили монстра");
+                    UsePotion();
+                    return;
+                }
+
+                if (playerHealth > 0)
+                {
+                    Console.WriteLine("Монстр нанес вам " + monsterAttack + " У вас осталось " + playerHealth);
+                }
+                else
+                {
+                    Console.WriteLine("Вы проиграли");
+                    EndGame();
+                    return;
+                }
+
+
+
+            }
+
+
+        }
+        public static void OpenChest()
+        {
+
+
+            Console.WriteLine("Проклятый сундук!");
+            Console.WriteLine("Потратить 10 здоровья что бы открыть? (1) да (2) пройти мимо");
+            bool b = true;
+            while (b == true)
+            {
+                string r = Console.ReadLine();
+                switch (r)
+                {
+                    case "1":
+                        if (playerHealth >= 10)
+                        {
+                            playerHealth -= 10;
+                            b = false;
+                            playerGold += 15;
+                            if (playerHealth < 0)
+                            {
+                                playerHealth = 0;
+                            }
+                        }
+                        else
+                        {
+                            Console.WriteLine("Не достаточно здоровья");
+                        }
+                        break;
+                    case "2":
+                        b = false;
+                        break;
+                    default:
+
+                        Console.WriteLine("Выбор не коректен");
+                        break;
+
+                }
+            }
+        }
+        public static void VisitMerchant()
+        {
+            Console.WriteLine("Перед вами торговец");
+            Console.WriteLine("Можно купить зелья (10 золота,нажмите 1) или стрелы (5 золота за 3 штуки,нажмите 2)");
+
+
+
+            string a = Console.ReadLine();
+            switch (a)
+            {
+                case "1":
+                    if (playerGold >= 10)
+                    {
+                        potionCount += 2;
+                        playerGold -= 10;
+
+                    }
+                    else
+                    {
+                        Console.WriteLine("Не достаточно золота");
+                    }
+                    break;
+                case "2":
+                    if (playerGold >= 5)
+                    {
+                        arrowCount += 3;
+                        playerGold -= 5;
+                    }
+                    else
+                    {
+                        Console.WriteLine("Не достаточно золота");
+                    }
+
+                    break;
+                default:
+                    break;
+
+            }
+        }
+        public static void Bonus()
+        {
+            Console.WriteLine("Вы посетили бонеусную комнату!");
+            Random random = new Random();
+            int a = random.Next(0, 2);
+            switch (a)
+            {
+                case 0:
+                    swordDamageAmount += 5;
+                    Console.WriteLine("Урон меча увеличен на 5");
+                    break;
+                case 1:
+                    bowDamageAmount += 5;
+                    Console.WriteLine("Урон лука увеличен на 5");
+                    break;
+                case 2:
+                    playerHealth += 10;
+                    Console.WriteLine("Ваше здоровье увеличено на 10");
+                    break;
+            }
+
+        }
+        public static void riddle()
+        {
+            Console.WriteLine("Сундук!");
+            int a = 3;
+            int b = 1;
+            Random rnd = new Random();
+            int c = rnd.Next(1, 3);
+
+            if (c == 1)
+            {
+                Console.WriteLine("1+2=?");
+                int p = Convert.ToInt32(Console.ReadLine());
+                if (p == a)
+                {
+                    playerGold += 10;
+                    Console.WriteLine("Сундук открыт вы получили 10 золота");
+                    return;
+                }
+                else { Console.WriteLine("Не удалось открыть"); }
+            }
+            else if (c == 2)
+            {
+                Console.WriteLine("3-2=?");
+                int p = Convert.ToInt32(Console.ReadLine());
+                if (p == b)
+                {
+                    playerGold += 10;
+                    Console.WriteLine("Сундук открыт вы получили 10 золота");
+                    return;
+                }
+                else { Console.WriteLine("Не удалось открыть"); }
+            }
+        }
+        public static void MeetDarkMage()
+        {
+            Console.WriteLine("Вы встретились с темным магом");
+            Console.WriteLine("Он предлагает сделку ваши 10 здоровья за 2 зелья и 5 стрел");
+            Console.WriteLine("(1)согласится (2) нет ");
+
+            bool b = true;
+            while (b == true)
+            {
+                string a = Console.ReadLine();
+                switch (a)
+                {
+                    case "1":
+                        if (playerHealth >= 10)
+                        {
+                            playerHealth -= 10;
+                            b = false;
+                            potionCount += 2;
+                            arrowCount += 5;
+                            if (playerHealth < 0)
+                            {
+                                playerHealth = 0;
+                            }
+                        }
+                        else
+                        {
+                            Console.WriteLine("Не достаточно здоровья");
+                        }
+                        break;
+                    case "2":
+                        b = false;
+                        break;
+                    default:
+                        Console.WriteLine("Выбор не коректен");
+                        break;
+
+                }
+            }
+        }
+        public static void VisitAltar()
+        {
+            Console.WriteLine("Вы пришли к алтарю");
+            if (playerGold < 10)
+            {
+                Console.WriteLine("Кажется ничего не происходит");
             }
             else
             {
-                Console.WriteLine("Неправильно! Сундук остался закрытым.");
+                Console.WriteLine("Можете потратить 10 золота (нажмите 1) что бы увеличить урон меча, восстановить здоровье или пройити мимо (нажмите 2) ");
+
+
+                bool b = true;
+                while (b == true)
+                {
+                    string a = Console.ReadLine();
+                    switch (a)
+                    {
+                        case "1":
+                            Console.WriteLine("(1) улучшить урон, (2) восстановить здоровье");
+
+                            bool d = true;
+                            while (d == true)
+                            {
+                                string c = Console.ReadLine();
+                                switch (c)
+                                {
+                                    case "1":
+                                        swordDamageAmount += 5;
+                                        playerGold -= 5;
+                                        d = false;
+                                        break;
+                                    case "2":
+                                        if (playerHealth < 80)
+                                        {
+                                            playerHealth += 20;
+                                            d = false;
+                                        }
+                                        else if (playerHealth < 100 && playerHealth >= 80)
+                                        {
+                                            playerHealth = 100;
+                                            d = false;
+                                        }
+                                        else
+                                        {
+                                            Console.WriteLine("Здоровье полное");
+                                        }
+                                        break;
+                                }
+
+                            }
+                            b = false;
+                            break;
+                        case "2":
+                            b = false;
+                            break;
+                        default:
+
+                            Console.WriteLine("Выбор не коректен");
+                            break;
+                    }
+
+                }
             }
         }
-
-        // торговец
-        static void HandleTrader(ref int playerHealth, ref int gold, Item[] inventory, ref int inventorySize, ref int potions)
+        public static void UsePotion()
         {
-            Console.WriteLine("\nВы встретили торговца.");
-            Console.WriteLine("Он предлагает зелье здоровья за 30 золота (восстанавливает 20 HP).");
-            Console.WriteLine($"У вас {gold} золота.");
-
-            Console.Write("Купить зелье? (y/n): ");
-            string choice = Console.ReadLine();
-
-            if (choice.ToLower() == "y")
+            if (potionCount > 0)
             {
-                if (gold >= 30)
+                Console.WriteLine("Нажмите (1) что б воссатановить здоровье или любую другую кнопку если не хотите");
+                string a = Console.ReadLine();
+                switch (a)
                 {
-                    gold -= 30;
-                    potions++;
+                    case "1":
+                        potionCount--;
+                        playerHealth += 30;
+                        if (playerHealth > 100)
+                        {
+                            playerHealth = 100;
+                        }
+                        break;
+                    default:
+                        break;
+                }
+            }
 
-                    Console.WriteLine("Вы купили зелье здоровья.");
+        }
+        public static void FightBoss()
+        {
+            int ultimate = 0;
+            Console.WriteLine("Босс!");
+
+            Random random = new Random();
+            int bossHp = 100;
+            Console.WriteLine("У босса " + bossHp + " здоровья");
+
+            while (bossHp > 0 && playerHealth > 0)
+            {
+                int monsterAttack = random.Next(10, 20);
+
+
+                bool b = true;
+                while (b == true)
+                {
+                    Console.WriteLine("(1) Атака  мечем, (2) Атака луком");
+                    string a = Console.ReadLine();
+                    {
+                        switch (a)
+                        {
+                            case "1":
+                                bossHp -= swordDamageAmount;
+                                b = false;
+                                break;
+                            case "2":
+                                if (arrowCount > 0)
+                                {
+                                    bossHp -= bowDamageAmount;
+                                    arrowCount -= 1;
+                                    b = false;
+                                }
+                                else
+                                {
+                                    Console.WriteLine("Недостаточно стрел");
+                                }
+                                break;
+                            default:
+
+                                Console.WriteLine("Выбор не коректен");
+                                break;
+                        }
+
+                    }
+
+                }
+
+                if (bossHp > 0)
+                {
+                    Console.WriteLine("У монстра осталось " + bossHp + " здоровья");
+
+                    ultimate++;
+                    if (ultimate == 3)
+                    {
+                        ultimate = 0;
+                        playerHealth -= monsterAttack * 2;
+                    }
+                    else
+                    {
+                        playerHealth -= monsterAttack;
+                    }
+                    if (playerHealth < 0)
+                    {
+                        playerHealth = 0;
+                    }
 
                 }
                 else
                 {
-                    Console.WriteLine("Недостаточно золота!");
+                    Console.WriteLine("Вы победили");
+                    UsePotion();
+                    return;
+                }
+                if (playerHealth > 0)
+                {
+                    if (ultimate == 3)
+                    {
+                        Console.WriteLine("Монстр нанес вам " + monsterAttack * 2 + " У вас осталось " + playerHealth);
+                    }
+                    else
+                    {
+                        Console.WriteLine("Монстр нанес вам " + monsterAttack + " У вас осталось " + playerHealth);
+                    }
+
+                }
+                else
+                {
+                    Console.WriteLine("Вы проиграли");
+                    EndGame();
+                    return;
                 }
             }
-            else
-            {
-                Console.WriteLine("Вы решили ничего не покупать.");
-            }
         }
+        public static void EndGame()
+        {
+            gameRunning = false; 
+        }
+        public static void ShowStats()
+        {
+            Console.WriteLine("здоровье " + playerHealth);
+            Console.WriteLine("стрелы " + arrowCount);
+            Console.WriteLine("зелья " + potionCount);
+            Console.WriteLine("золото " + playerGold);
+        }
+
     }
 }
